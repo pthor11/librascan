@@ -53,11 +53,7 @@ const start = async (version) => {
                 if (version == 1) {
                     await new LifeCycle({ start: txs[0].expiration }).save()
                 }
-                const session = await mongoose.startSession()
-                session.startSession()
                 await TX.insertMany(txs)
-                await session.commitTransaction();
-                session.endSession()
                 console.log(`version: ${version} - ${version + transactions.length} saved`)
                 
                 setTimeout(() => {
