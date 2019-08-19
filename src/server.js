@@ -1,5 +1,7 @@
 import { Client } from 'libra-grpc'
+import mongoose from './mongoose'
 import TX from './models/TX'
+import Account from './models/Account'
 import LifeCycle from './models/LifeCycle'
 
 const client = new Client('ac.testnet.libra.org:8000');
@@ -51,14 +53,22 @@ const start = async (version) => {
                 if (version == 1) {
                     await new LifeCycle({ start: txs[0].expiration }).save()
                 }
+                const session = await mongoose.startSession()
+                session.startSession()
                 await TX.insertMany(txs)
+                await session.commitTransaction();
+                session.endSession()
+                console.log(`version: ${version} - ${version + transactions.length} saved`)
+                
                 setTimeout(() => {
                     start(version + transactions.length)
                 }, 1000)
             } catch (error) {
                 console.log(error)
                 console.log(`Failed at version ${version}. Retry after 1000 ms.`)
-                setTimeout(start, 1000)
+                setTimeout(() => {
+                    start(version)
+                }, 1000)
             }
         } else {
             const firstTX = await TX.findOne({ version: 1 }, { _id: 0, signed_transaction_hash: 1 })
